@@ -1,0 +1,11 @@
+[target.wasm32v1-none]
+rustflags = ["-C", "link-args=-z stack-size=32768"]
+runner = "soroban contract invoke"
+
+[registries]
+soroban = { index = "https://soroban.stellar.org/registry" }
+
+[env]
+SOROBAN_RPC_URL = "https://soroban-testnet.stellar.org"
+SOROBAN_NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"
+SOROBAN_SOURCE_ACCOUNT = ""

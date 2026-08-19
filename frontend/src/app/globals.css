@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #7c3aed;
+  --color-primary-active: #6d28d9;
+  --color-primary-disabled: #c4b5fd;
+  --color-accent-yellow: #f4b000;
+
+  --color-canvas: #ffffff;
+  --color-surface-soft: #f7f7f7;
+  --color-surface-strong: #eef0f3;
+  --color-surface-dark: #1a1a2e;
+  --color-surface-dark-elevated: #22223a;
+
+  --color-hairline: #dee1e6;
+  --color-hairline-soft: #eef0f3;
+
+  --color-ink: #0a0b0d;
+  --color-body: #5b616e;
+  --color-body-strong: #0a0b0d;
+  --color-muted: #7c828a;
+  --color-muted-soft: #a8acb3;
+
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-on-dark-soft: #a8acb3;
+
+  --color-semantic-up: #05b169;
+  --color-semantic-down: #cf202f;
+
+  --color-primary-bg: #ede9fe;
+  --color-primary-bg-dark: #2e1065;
+  --color-primary-text-dark: #a78bfa;
+
+  --font-sans: var(--font-inter), -apple-system, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, monospace, SF Mono;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 100px;
+  --radius-full: 9999px;
+
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-fade-in-up: fade-in-up 0.6s ease-out;
+  --animate-in: animate-in 0.2s ease-out;
+  --animate-out: animate-out 0.2s ease-out reverse;
+  --animate-spin: spin 1s linear infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes animate-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes animate-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+}
+
+.dark,
+.dark * {
+  --color-canvas: #1a1a2e;
+  --color-surface-soft: #22223a;
+  --color-surface-strong: #2a2a44;
+  --color-surface-dark: #12121e;
+  --color-surface-dark-elevated: #1e1e32;
+  --color-hairline: #2e2e48;
+  --color-hairline-soft: #22223a;
+  --color-ink: #e8e8f0;
+  --color-body: #b0b0c8;
+  --color-body-strong: #e8e8f0;
+  --color-muted: #8a8aa8;
+  --color-muted-soft: #6a6a88;
+  --color-on-dark: #e8e8f0;
+  --color-on-dark-soft: #a8a8c0;
+  --color-on-primary: #ffffff;
+  --color-primary-bg: #2e1065;
+  --color-primary-text-dark: #a78bfa;
+  --color-primary-disabled: #4a1a8a;
+
+  --color-zinc-50: #22223a;
+  --color-zinc-100: #2a2a44;
+  --color-zinc-200: #2e2e48;
+  --color-zinc-300: #3a3a54;
+  --color-zinc-400: #8a8aa8;
+  --color-zinc-500: #6a6a88;
+  --color-zinc-600: #5b5b78;
+  --color-zinc-700: #4a4a68;
+  --color-zinc-800: #2a2a44;
+  --color-zinc-900: #22223a;
+  --color-zinc-950: #1a1a2e;
+
+  --color-gray-50: #22223a;
+  --color-gray-100: #2a2a44;
+  --color-gray-200: #2e2e48;
+  --color-gray-300: #3a3a54;
+  --color-gray-400: #8a8aa8;
+  --color-gray-500: #6a6a88;
+  --color-gray-600: #5b5b78;
+  --color-gray-700: #4a4a68;
+  --color-gray-800: #2a2a44;
+  --color-gray-900: #22223a;
+  --color-gray-950: #1a1a2e;
+
+  --color-neutral-50: #22223a;
+  --color-neutral-100: #2a2a44;
+  --color-neutral-200: #2e2e48;
+  --color-neutral-300: #3a3a54;
+  --color-neutral-400: #8a8aa8;
+  --color-neutral-500: #6a6a88;
+  --color-neutral-600: #5b5b78;
+  --color-neutral-700: #4a4a68;
+  --color-neutral-800: #2a2a44;
+  --color-neutral-900: #22223a;
+  --color-neutral-950: #1a1a2e;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-hairline);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: #7c3aed;
+    color: white;
+  }
+}
+
+@utility container-main {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@utility section-padding {
+  padding-top: 96px;
+  padding-bottom: 96px;
+}
+
+@utility card-inner {
+  padding: 32px;
+}
+
+@utility focus-ring {
+  outline: none;
+  &:focus-visible {
+    box-shadow: 0 0 0 2px #7c3aed;
+    outline: 2px solid transparent;
+  }
+}
+
+[data-state="open"] {
+  animation: fade-in 0.2s ease-out;
+}
+
+[data-state="closed"] {
+  animation: fade-in 0.2s ease-out reverse;
+}

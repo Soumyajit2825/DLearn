@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+target/
+
+# Environment files (keep .env.example)
+.env
+.env.local
+.env.production
+.env.production.local
+backend/.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Cargo
+contract/target/
+contract/Cargo.lock
+
+# Supabase
+supabase/.temp/
+
+# Claude
+.claude/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+Problems.md
+corsair.md
+design.md
+DEPLOYMENT (1).md
+soroban.md
+stellarx402.md
+prd.md
+skills-lock.json
