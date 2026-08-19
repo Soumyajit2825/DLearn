@@ -9,26 +9,34 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
-  const isProduction = configService.get<string>('NODE_ENV') === 'production';
 
-  // Security headers - relaxed in production for Swagger
+  // Security headers
   app.use(
     helmet({
-      contentSecurityPolicy: isProduction ? false : undefined,
+      contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
     }),
   );
 
-  // CORS - support multiple origins
-  const corsOrigin = configService.get<string>('app.corsOrigin') || 'http://localhost:3000';
-  const origins = corsOrigin.split(',').map((o) => o.trim());
+  // CORS - support multiple origins with wildcard fallback
+  const corsOrigin = configService.get<string>('app.corsOrigin') || '*';
 
-  app.enableCors({
-    origin: origins,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
-    allowedHeaders: 'Content-Type,Authorization,Accept',
-  });
+  if (corsOrigin === '*') {
+    app.enableCors({
+      origin: true,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+      allowedHeaders: 'Content-Type,Authorization,Accept,Origin,X-Requested-With',
+    });
+  } else {
+    const origins = corsOrigin.split(',').map((o: string) => o.trim());
+    app.enableCors({
+      origin: origins,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+      allowedHeaders: 'Content-Type,Authorization,Accept,Origin,X-Requested-With',
+    });
+  }
 
   app.setGlobalPrefix('api/v1');
 
@@ -43,24 +51,19 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger docs (available in all environments)
+  // Swagger docs
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Decentralized Learning Platform API')
     .setDescription('API for the DLearn Decentralized Learning Platform')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('Authentication', 'User registration, login, and token management')
-    .addTag('Courses', 'Course CRUD and discovery')
-    .addTag('Enrollments', 'Student enrollment and progress tracking')
-    .addTag('Certificates', 'Blockchain certificate issuance and verification')
-    .addTag('Payments', 'Stellar-based payment processing')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
 
-  // Health check endpoint
-  app.getHttpAdapter().get('/health', (req, res) => {
+  // Health check
+  app.getHttpAdapter().get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
@@ -68,6 +71,5 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
-  console.log(`❤️  Health check: http://localhost:${port}/health`);
 }
 bootstrap();
