@@ -2,16 +2,18 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { GraduationCap, Eye, EyeOff, ArrowRight } from "lucide-react"
+import { GraduationCap, Eye, EyeOff, ArrowRight, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "@/providers/auth-provider"
+import { useWallet } from "@/providers/wallet-provider"
 
 export default function LoginPage() {
   const { login } = useAuth()
+  const { connect, connected, address, connecting } = useWallet()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -32,6 +34,15 @@ export default function LoginPage() {
       setError(err.message || "Invalid email or password")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleWalletConnect = async () => {
+    setError("")
+    try {
+      await connect()
+    } catch (err: any) {
+      setError(err.message || "Failed to connect wallet. Make sure Freighter is installed.")
     }
   }
 
@@ -100,8 +111,12 @@ export default function LoginPage() {
 
           <Separator />
 
-          <Button type="button" variant="outline" className="w-full" size="lg">
-            Sign in with Stellar
+          <Button type="button" variant="outline" className="w-full" size="lg" onClick={handleWalletConnect} loading={connecting}>
+            {connected ? (
+              <><Wallet className="mr-2 h-4 w-4" /> {address?.slice(0, 6)}...{address?.slice(-4)}</>
+            ) : (
+              <><Wallet className="mr-2 h-4 w-4" /> Connect Stellar Wallet</>
+            )}
           </Button>
 
           <p className="text-center text-sm text-muted">

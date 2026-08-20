@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Bell, Search, Menu, Sun, Moon } from "lucide-react"
+import { Bell, Search, Menu, Sun, Moon, Wallet } from "lucide-react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -19,13 +19,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/providers/auth-provider"
+import { useWallet } from "@/providers/wallet-provider"
 
 interface TopNavProps {
   onMenuClick?: () => void
 }
 
 export function TopNav({ onMenuClick }: TopNavProps) {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const { connected, address, connect, connecting } = useWallet()
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
   const [mounted, setMounted] = React.useState(false)
@@ -51,6 +53,18 @@ export function TopNav({ onMenuClick }: TopNavProps) {
           className="h-10 w-64 rounded-pill border-hairline bg-surface-strong pl-10 text-sm focus:bg-canvas"
         />
       </div>
+
+      {/* Wallet Button */}
+      <Button
+        variant={connected ? "outline" : "ghost"}
+        size="sm"
+        onClick={connect}
+        loading={connecting}
+        className={cn("text-sm", connected && "border-semantic-up text-semantic-up")}
+      >
+        <Wallet className="h-4 w-4 mr-1.5" />
+        {connected ? `${address?.slice(0, 4)}...${address?.slice(-4)}` : "Connect Wallet"}
+      </Button>
 
       {mounted && (
         <Button
@@ -86,6 +100,11 @@ export function TopNav({ onMenuClick }: TopNavProps) {
             <div className="flex flex-col">
               <span>{user?.full_name}</span>
               <span className="text-xs font-normal text-muted">{user?.email}</span>
+              {connected && (
+                <span className="text-xs font-mono text-semantic-up mt-1">
+                  {address?.slice(0, 8)}...{address?.slice(-6)}
+                </span>
+              )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -100,7 +119,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
             <Link href="/pricing">Upgrade Plan</Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-red-600">Log out</DropdownMenuItem>
+          <DropdownMenuItem className="text-red-600" onClick={logout}>Log out</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

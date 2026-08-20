@@ -10,10 +10,12 @@ import { Separator } from "@/components/ui/separator"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/providers/auth-provider"
+import { useWallet } from "@/providers/wallet-provider"
 import { cn } from "@/lib/utils"
 
 export default function SignupPage() {
   const { signup } = useAuth()
+  const { connect, connected, address, connecting } = useWallet()
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -52,6 +54,15 @@ export default function SignupPage() {
       setError(err.message || "Signup failed")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleWalletConnect = async () => {
+    setError("")
+    try {
+      await connect()
+    } catch (err: any) {
+      setError(err.message || "Failed to connect wallet. Make sure Freighter is installed.")
     }
   }
 
@@ -138,9 +149,12 @@ export default function SignupPage() {
 
           <Separator />
 
-          <Button type="button" variant="outline" className="w-full" size="lg">
-            <Wallet className="mr-2 h-4 w-4" />
-            Connect Stellar Wallet
+          <Button type="button" variant="outline" className="w-full" size="lg" onClick={handleWalletConnect} loading={connecting}>
+            {connected ? (
+              <><Wallet className="mr-2 h-4 w-4" /> {address?.slice(0, 6)}...{address?.slice(-4)}</>
+            ) : (
+              <><Wallet className="mr-2 h-4 w-4" /> Connect Stellar Wallet</>
+            )}
           </Button>
 
           <p className="text-center text-sm text-muted">
