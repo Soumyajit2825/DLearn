@@ -154,7 +154,6 @@ export async function getPaymentHistory(address: string): Promise<PaymentRecord[
     .forAccount(address)
     .order("desc")
     .limit(20)
-    .includeTransactions(true)
     .call()
 
   return response.records.map((record: any) => {
@@ -173,7 +172,7 @@ export async function getPaymentHistory(address: string): Promise<PaymentRecord[
 
     const direction = from === address ? "sent" : "received"
     const timestamp = record.created_at || new Date().toISOString()
-    const hash = record.transaction_hash || record.id
+    const hash = record.transaction_hash || record.id || ""
 
     return {
       id: record.id,
