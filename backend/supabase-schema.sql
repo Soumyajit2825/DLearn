@@ -6,14 +6,22 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create custom enum types
+-- Create custom enum types (DROP first to make idempotent)
+DROP TYPE IF EXISTS user_role;
 CREATE TYPE user_role AS ENUM ('student', 'instructor', 'admin');
+DROP TYPE IF EXISTS lesson_type;
 CREATE TYPE lesson_type AS ENUM ('video', 'article', 'quiz', 'assignment');
+DROP TYPE IF EXISTS enrollment_status;
 CREATE TYPE enrollment_status AS ENUM ('active', 'completed', 'dropped');
+DROP TYPE IF EXISTS submission_status;
 CREATE TYPE submission_status AS ENUM ('submitted', 'graded', 'resubmitted');
+DROP TYPE IF EXISTS question_type;
 CREATE TYPE question_type AS ENUM ('multiple_choice', 'true_false', 'short_answer');
+DROP TYPE IF EXISTS notification_type;
 CREATE TYPE notification_type AS ENUM ('enrollment', 'completion', 'certificate', 'payment', 'assignment', 'quiz', 'system');
+DROP TYPE IF EXISTS transaction_type;
 CREATE TYPE transaction_type AS ENUM ('payment', 'payout', 'refund', 'deposit');
+DROP TYPE IF EXISTS transaction_status;
 CREATE TYPE transaction_status AS ENUM ('pending', 'completed', 'failed');
 
 -- Users table
