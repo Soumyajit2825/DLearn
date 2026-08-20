@@ -23,15 +23,10 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const names = dto.full_name
-      ? { firstName: dto.full_name.split(' ').slice(0, -1).join(' ') || dto.full_name, lastName: dto.full_name.split(' ').pop() || '' }
-      : { firstName: dto.firstName, lastName: dto.lastName };
-
-    const { full_name, ...userData } = dto;
-
     const user = await this.usersService.create({
-      ...userData,
-      ...names,
+      email: dto.email,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
       password: hashedPassword,
       role: dto.role || UserRole.STUDENT,
     } as any);

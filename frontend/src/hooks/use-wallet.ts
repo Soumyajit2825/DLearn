@@ -5,12 +5,11 @@ import {
   connectWallet,
   checkExistingAccess,
   isFreighterAvailable,
-  type WalletInfo,
 } from "@/lib/freighter"
 
 const STORAGE_KEY = "dlearn:stellar_address"
 const DISCONNECT_KEY = "dlearn:disconnected"
-const POLL_INTERVAL = 4000
+const POLL_INTERVAL = 5000
 
 export type WalletStatus = "idle" | "connecting" | "connected" | "error"
 
@@ -30,8 +29,9 @@ export function useWallet(): UseWalletReturn {
   const [network, setNetwork] = useState<string | null>(null)
   const [isTestnet, setIsTestnet] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const pollRef = useRef<NodeJS.Timeout | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const disconnectedRef = useRef(false)
+  const mountedRef = useRef(false)
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -40,8 +40,11 @@ export function useWallet(): UseWalletReturn {
     }
   }, [])
 
-  const restoreSession = useCallback(async () => {
-    // Check if user explicitly disconnected
+  // Restore session on mount — silently, no blocking
+  useEffect(() => {
+    if (mountedRef.current) return
+    mountedRef.current = true
+
     if (localStorage.getItem(DISCONNECT_KEY)) {
       disconnectedRef.current = true
       return
@@ -50,26 +53,20 @@ export function useWallet(): UseWalletReturn {
     const savedAddress = localStorage.getItem(STORAGE_KEY)
     if (!savedAddress) return
 
-    try {
-      const wallet = await checkExistingAccess()
-      if (wallet && wallet.address === savedAddress) {
-        setAddress(wallet.address)
-        setNetwork(wallet.network)
-        setIsTestnet(wallet.isTestnet)
-        setStatus("connected")
-      } else {
-        // Address changed or no longer connected
-        localStorage.removeItem(STORAGE_KEY)
-      }
-    } catch {
-      // Silently fail — user may have disconnected Freighter
-    }
+    // Non-blocking session restore
+    checkExistingAccess()
+      .then((wallet) => {
+        if (wallet && wallet.address === savedAddress) {
+          setAddress(wallet.address)
+          setNetwork(wallet.network)
+          setIsTestnet(wallet.isTestnet)
+          setStatus("connected")
+        } else {
+          localStorage.removeItem(STORAGE_KEY)
+        }
+      })
+      .catch(() => {})
   }, [])
-
-  // Restore session on mount
-  useEffect(() => {
-    restoreSession()
-  }, [restoreSession])
 
   // Poll for address/network changes
   useEffect(() => {
@@ -83,9 +80,7 @@ export function useWallet(): UseWalletReturn {
           setNetwork(wallet.network)
           setIsTestnet(wallet.isTestnet)
         }
-      } catch {
-        // Extension may have been disabled
-      }
+      } catch {}
     }, POLL_INTERVAL)
 
     return () => stopPolling()
@@ -107,6 +102,8 @@ export function useWallet(): UseWalletReturn {
     } catch (err: any) {
       setError(err.message || "Failed to connect wallet")
       setStatus("error")
+      // Reset to idle after 3 seconds so user can retry
+      setTimeout(() => setStatus("idle"), 3000)
     }
   }, [])
 

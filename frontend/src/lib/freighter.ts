@@ -3,16 +3,8 @@
  * The app never sees private keys. All signing goes through Freighter's popup.
  */
 
-import {
-  isConnected,
-  isAllowed,
-  requestAccess,
-  signTransaction,
-  getNetwork,
-  getNetworkDetails,
-} from "@stellar/freighter-api"
-
 const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015"
+const TIMEOUT_MS = 5000
 
 export interface WalletInfo {
   address: string
@@ -30,11 +22,43 @@ export class FreighterError extends Error {
 }
 
 /**
- * Check if Freighter extension is installed and injecting.
+ * Race a promise against a timeout.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ])
+}
+
+/**
+ * Check if Freighter extension is injected in the page.
+ */
+function isFreighterInjected(): boolean {
+  return typeof window !== "undefined" && !!(window as any).freighter
+}
+
+/**
+ * Dynamically import Freighter API (only works in browser).
+ */
+async function getFreighterApi() {
+  try {
+    const mod = await import("@stellar/freighter-api")
+    return mod
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Check if Freighter is available and responsive.
  */
 export async function isFreighterAvailable(): Promise<boolean> {
+  if (!isFreighterInjected()) return false
   try {
-    const result = await isConnected()
+    const api = await getFreighterApi()
+    if (!api) return false
+    const result = await withTimeout(api.isConnected(), TIMEOUT_MS, { isConnected: false })
     return result.isConnected === true
   } catch {
     return false
@@ -42,91 +66,90 @@ export async function isFreighterAvailable(): Promise<boolean> {
 }
 
 /**
- * Get the current network from Freighter.
- */
-async function getCurrentNetwork(): Promise<string> {
-  try {
-    const details = await getNetworkDetails()
-    return details.networkPassphrase || ""
-  } catch {
-    return ""
-  }
-}
-
-/**
  * Connect to Freighter — opens the approval popup.
- * Returns the user's Stellar address.
  */
 export async function connectWallet(): Promise<WalletInfo> {
-  const available = await isFreighterAvailable()
-  if (!available) {
+  if (!isFreighterInjected()) {
     throw new FreighterError(
-      "Freighter wallet extension is not installed. Please install it from https://freighter.app",
+      "Freighter wallet extension is not installed. Install it from https://freighter.app",
       "NOT_INSTALLED"
     )
   }
 
+  const api = await getFreighterApi()
+  if (!api) {
+    throw new FreighterError("Could not load Freighter API", "API_LOAD_FAILED")
+  }
+
   try {
-    const access = await requestAccess()
-    if (access.error) {
-      throw new FreighterError(access.error.message || "Access denied", "ACCESS_DENIED")
+    const access = await withTimeout(api.requestAccess(), TIMEOUT_MS, null)
+    if (!access || access.error) {
+      throw new FreighterError(access?.error?.message || "Access denied by user", "ACCESS_DENIED")
     }
 
-    const network = await getCurrentNetwork()
-    const isTestnet = network === TESTNET_PASSPHRASE || network.includes("Test")
-
-    return {
-      address: access.address,
-      network,
-      isTestnet,
+    let network = ""
+    try {
+      const details = await withTimeout(api.getNetworkDetails(), TIMEOUT_MS, null)
+      network = details?.networkPassphrase || ""
+    } catch {
+      // Network detection failed, default to testnet
+      network = TESTNET_PASSPHRASE
     }
+
+    const isTestnet = network === TESTNET_PASSPHRASE || network.includes("Test") || network === ""
+
+    return { address: access.address, network, isTestnet }
   } catch (err: any) {
     if (err instanceof FreighterError) throw err
-    if (err.message?.includes("declined") || err.message?.includes("reject")) {
-      throw new FreighterError("Connection was declined by the user", "DECLINED")
-    }
-    throw new FreighterError(err.message || "Failed to connect to Freighter", "CONNECT_FAILED")
+    throw new FreighterError(err.message || "Failed to connect", "CONNECT_FAILED")
   }
 }
 
 /**
- * Check if the user already approved this site (silent, no popup).
+ * Check if user already approved this site (silent, no popup).
  */
 export async function checkExistingAccess(): Promise<WalletInfo | null> {
+  if (!isFreighterInjected()) return null
+
+  const api = await getFreighterApi()
+  if (!api) return null
+
   try {
-    const allowed = await isAllowed()
-    if (!allowed) return null
+    const allowed = await withTimeout(api.isAllowed(), TIMEOUT_MS, { isAllowed: false })
+    if (!allowed.isAllowed) return null
 
-    const access = await getAddress()
-    if (!access.address) return null
+    const access = await withTimeout(api.getAddress(), TIMEOUT_MS, null)
+    if (!access || !access.address || access.error) return null
 
-    const network = await getCurrentNetwork()
-    const isTestnet = network === TESTNET_PASSPHRASE || network.includes("Test")
-
-    return {
-      address: access.address,
-      network,
-      isTestnet,
+    let network = ""
+    try {
+      const details = await withTimeout(api.getNetworkDetails(), TIMEOUT_MS, null)
+      network = details?.networkPassphrase || ""
+    } catch {
+      network = TESTNET_PASSPHRASE
     }
+
+    const isTestnet = network === TESTNET_PASSPHRASE || network.includes("Test") || network === ""
+
+    return { address: access.address, network, isTestnet }
   } catch {
     return null
   }
 }
 
-// Import getAddress separately since it's used for silent checks
-import { getAddress } from "@stellar/freighter-api"
-
 /**
  * Sign an XDR transaction through Freighter's popup.
- * Returns the signed XDR string.
  */
 export async function signXdr(
   xdr: string,
   address: string,
   networkPassphrase: string = TESTNET_PASSPHRASE
 ): Promise<string> {
+  const api = await getFreighterApi()
+  if (!api) throw new FreighterError("Freighter API not available", "API_UNAVAILABLE")
+
   try {
-    const result = await signTransaction(xdr, {
+    const result = await api.signTransaction(xdr, {
       address,
       networkPassphrase,
     })
@@ -136,9 +159,6 @@ export async function signXdr(
     return result.signedTxXdr
   } catch (err: any) {
     if (err instanceof FreighterError) throw err
-    if (err.message?.includes("declined") || err.message?.includes("reject")) {
-      throw new FreighterError("Transaction was declined by the user", "SIGN_DECLINED")
-    }
-    throw new FreighterError(err.message || "Failed to sign transaction", "SIGN_FAILED")
+    throw new FreighterError(err.message || "Signing failed", "SIGN_FAILED")
   }
 }

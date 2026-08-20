@@ -42,7 +42,12 @@ export default function LoginPage() {
     try {
       await connect()
     } catch (err: any) {
-      setError(err.message || "Failed to connect wallet. Make sure Freighter is installed.")
+      const msg = err.message || ""
+      if (msg.includes("not installed") || msg.includes("NOT_INSTALLED")) {
+        setError("Freighter wallet is not installed. Install it from freighter.app to connect your Stellar wallet.")
+      } else {
+        setError(msg || "Failed to connect wallet. Make sure Freighter is installed.")
+      }
     }
   }
 

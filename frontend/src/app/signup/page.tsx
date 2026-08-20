@@ -39,8 +39,8 @@ export default function SignupPage() {
       setError("Passwords do not match")
       return
     }
-    if (form.password.length < 8) {
-      setError("Password must be at least 8 characters")
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters")
       return
     }
     if (!terms) {

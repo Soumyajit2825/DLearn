@@ -54,7 +54,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signup = async (data: SignupData) => {
-    const res = await api.post<{ accessToken: string; refreshToken: string; user: User }>("/auth/register", data)
+    const names = data.full_name.trim().split(/\s+/)
+    const firstName = names[0] || data.full_name
+    const lastName = names.slice(1).join(" ") || ""
+    const res = await api.post<{ accessToken: string; refreshToken: string; user: User }>("/auth/register", {
+      email: data.email,
+      password: data.password,
+      firstName,
+      lastName,
+      full_name: data.full_name,
+      role: data.role,
+    })
     localStorage.setItem("access_token", res.accessToken)
     if (res.refreshToken) localStorage.setItem("refresh_token", res.refreshToken)
     api.setToken(res.accessToken)
